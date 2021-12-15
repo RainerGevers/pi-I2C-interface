@@ -13,14 +13,19 @@ type DataReaderWriter struct {
 }
 
 func (dr *DataReaderWriter) ReadFromAddr(dataAddr uint8) uint8 {
-	cmd := exec.Command(fmt.Sprintf("i2cget -y %d 0x%X 0x%X", dr.I2cBus, dr.ChipAddr, dataAddr))
+	command := "/usr/sbin/i2cget"
+	arg0 := "-y"
+	arg1 := fmt.Sprintf("%d", dr.I2cBus)
+	arg2 := fmt.Sprintf("0x%X", dr.ChipAddr)
+	arg3 := fmt.Sprintf("0x%X", dataAddr)
+	cmd := exec.Command(command, arg0, arg1, arg2, arg3)
 	dataRaw, err := cmd.Output()
-	if err != nil {
-		return 0
-	}
 	data := strings.TrimLeft(strings.TrimRight(string(dataRaw), "\n"), "0x")
+	if len(data) == 1 {
+		data = fmt.Sprintf("0%v", data)
+	}
 	res, err := hex.DecodeString(data)
-	if err != nil {
+	if err != nil || len(res) == 0 {
 		return 0
 	}
 	return res[0]
@@ -37,7 +42,13 @@ func (dr *DataReaderWriter) ReadFromAddrUInt32(dataAddr uint8) uint32 {
 }
 
 func (dr *DataReaderWriter) WriteToAddr(dataAddr uint8, data uint8) bool {
-	cmd := exec.Command(fmt.Sprintf("i2cset -y %d 0x%X 0x%X 0x%X", dr.I2cBus, dr.ChipAddr, dataAddr, data))
+	command := "/usr/sbin/i2cset"
+	arg0 := "-y"
+	arg1 := fmt.Sprintf("%d", dr.I2cBus)
+	arg2 := fmt.Sprintf("0x%X", dr.ChipAddr)
+	arg3 := fmt.Sprintf("0x%X", dataAddr)
+	arg4 := fmt.Sprintf("0x%X", data)
+	cmd := exec.Command(command, arg0, arg1, arg2, arg3, arg4)
 	_, err := cmd.Output()
 	if err != nil {
 		return false
